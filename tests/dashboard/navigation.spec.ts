@@ -1,28 +1,14 @@
 import { test, expect } from '../../fixtures/test-fixtures';
 import { Logger } from '../../utils/logger';
-import testConfig from '../../config/test-config';
 
 test.describe('Dashboard Navigation', () => {
-  // Sign in before each test
-  test.beforeEach(async ({ signInPage, dashboardPage: _dashboardPage }) => {
-    Logger.info('Setting up: Signing in user');
-
-    await signInPage.navigateToHome();
-    await signInPage.page.click('a:has-text("Sign In")');
-    await signInPage.signIn(
-      testConfig.testUsers.validUser.email,
-      testConfig.testUsers.validUser.password,
-      true
-    );
-
-    // Wait for dashboard to load
-    await signInPage.page.waitForURL('**/dashboard');
-    Logger.success('User signed in, on dashboard');
+  // Use the authenticatedPage fixture to automatically sign in before each test
+  test.beforeEach(async ({ authenticatedPage }) => {
+    // User is already signed in and on dashboard thanks to the fixture
+    void authenticatedPage; // Acknowledge the fixture is used for its side effect
   });
 
-  test('should display all functioning navigation links on dashboard', async ({
-    dashboardPage,
-  }) => {
+  test('should display all navigation links on dashboard', async ({ dashboardPage }) => {
     Logger.testStart('Verify Dashboard Navigation Links');
 
     try {
@@ -95,8 +81,6 @@ test.describe('Dashboard Navigation', () => {
       await dashboardPage.navigateToOrganization();
 
       Logger.step(2, 'Verify Create button is visible');
-
-      // Use the specific locator from DashboardPage
       const isVisible = await dashboardPage.isCreateButtonVisible();
       expect(isVisible).toBe(true);
 
@@ -105,6 +89,33 @@ test.describe('Dashboard Navigation', () => {
     } catch (error) {
       Logger.error('Test failed', error);
       Logger.testEnd('Verify Create Button on Organization Page', false);
+      throw error;
+    }
+  });
+
+  test('should navigate back to Dashboard from Organization page', async ({ dashboardPage }) => {
+    Logger.testStart('Navigate Back to Dashboard');
+
+    try {
+      Logger.step(1, 'Navigate to Organization page');
+      await dashboardPage.navigateToOrganization();
+      await expect(dashboardPage.page).toHaveURL(/\/organization/);
+
+      Logger.step(2, 'Click Dashboard link to return');
+      await dashboardPage.navigateToDashboard();
+
+      Logger.step(3, 'Verify navigation back to Dashboard');
+      await expect(dashboardPage.page).toHaveURL(/\/dashboard/);
+
+      Logger.step(4, 'Verify Dashboard link is active');
+      const isActive = await dashboardPage.isDashboardLinkActive();
+      expect(isActive).toBe(true);
+
+      Logger.success('Successfully navigated back to Dashboard');
+      Logger.testEnd('Navigate Back to Dashboard', true);
+    } catch (error) {
+      Logger.error('Test failed', error);
+      Logger.testEnd('Navigate Back to Dashboard', false);
       throw error;
     }
   });
