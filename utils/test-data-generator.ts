@@ -31,10 +31,12 @@ export class TestDataGenerator {
   }
 
   static generatePassword(): string {
-    return faker.internet.password({
-      length: testConfig.testData.passwordLength,
-      memorable: false,
-    }) + '!1Aa'; // Ensure it has special characters, numbers, uppercase
+    return (
+      faker.internet.password({
+        length: testConfig.testData.passwordLength,
+        memorable: false,
+      }) + '!1Aa'
+    ); // Ensure it has special characters, numbers, uppercase
   }
 
   static generateOrganization(): OrganizationData {

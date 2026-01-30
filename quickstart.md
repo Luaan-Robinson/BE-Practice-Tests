@@ -24,6 +24,7 @@ npm test
 ## 🎯 Common Commands
 
 ### Running Tests
+
 ```bash
 npm test                    # Run all tests
 npm run test:headed         # See browser
@@ -33,6 +34,7 @@ npm run test:chrome         # Chrome only
 ```
 
 ### Specific Tests
+
 ```bash
 npm run test:signin         # Sign in tests only
 npm run test:signup         # Sign up tests only
@@ -40,6 +42,7 @@ npm run test:auth           # All auth tests
 ```
 
 ### Reports
+
 ```bash
 npm run report              # View HTML report
 ```
@@ -47,14 +50,16 @@ npm run report              # View HTML report
 ## 📝 Writing Your First Test
 
 1. **Copy the template:**
+
    ```bash
    cp tests/example.template.spec.ts tests/my-feature/my-test.spec.ts
    ```
 
 2. **Edit the test:**
+
    ```typescript
    import { test, expect } from '../fixtures/test-fixtures';
-   
+
    test.describe('My Feature', () => {
      test('should do something', async ({ homePage }) => {
        await homePage.navigateToHome();
@@ -71,19 +76,20 @@ npm run report              # View HTML report
 ## 🏗️ Creating a Page Object
 
 1. **Create the page class:**
+
    ```typescript
    // pages/MyPage.ts
    import { Page, Locator } from '@playwright/test';
    import { BasePage } from './BasePage';
-   
+
    export class MyPage extends BasePage {
      private readonly myButton: Locator;
-     
+
      constructor(page: Page) {
        super(page);
        this.myButton = page.locator('#my-button');
      }
-     
+
      async clickMyButton(): Promise<void> {
        await this.clickElement(this.myButton, 'My Button');
      }
@@ -91,15 +97,16 @@ npm run report              # View HTML report
    ```
 
 2. **Add to fixtures:**
+
    ```typescript
    // fixtures/test-fixtures.ts
    import { MyPage } from '../pages/MyPage';
-   
+
    type CustomFixtures = {
      // ... existing
      myPage: MyPage;
    };
-   
+
    export const test = base.extend<CustomFixtures>({
      // ... existing fixtures
      myPage: async ({ page }, use) => {
@@ -118,24 +125,30 @@ npm run report              # View HTML report
 ## 🔍 Debugging
 
 ### Option 1: Headed Mode
+
 ```bash
 npm run test:headed
 ```
+
 - See the browser
 - Watch test execution
 
 ### Option 2: Debug Mode
+
 ```bash
 npm run test:debug
 ```
+
 - Step through tests
 - Inspect elements
 - Set breakpoints
 
 ### Option 3: UI Mode
+
 ```bash
 npm run test:ui
 ```
+
 - Interactive test runner
 - Watch tests
 - Time travel debugging
@@ -143,11 +156,13 @@ npm run test:ui
 ## 📊 Viewing Reports
 
 After running tests:
+
 ```bash
 npm run report
 ```
 
 This opens an HTML report showing:
+
 - ✅ Passed tests
 - ❌ Failed tests
 - 📸 Screenshots
@@ -157,21 +172,25 @@ This opens an HTML report showing:
 ## 🆘 Common Issues
 
 ### "Cannot find module"
+
 ```bash
 npm install
 ```
 
 ### "Browser not found"
+
 ```bash
 npm run install:browsers
 ```
 
 ### "Tests failing"
+
 1. Check `.env` file exists
 2. Verify application is running
 3. Run in headed mode to see what's happening
 
 ### "Permission denied"
+
 ```bash
 chmod +x node_modules/.bin/playwright
 ```

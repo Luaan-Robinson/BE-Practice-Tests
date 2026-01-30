@@ -54,13 +54,13 @@ export class SignUpPage {
   async signUp(userData: UserData): Promise<void> {
     Logger.step(1, 'Fill in sign up form');
     Logger.info(`Registering user: ${userData.email}`);
-    
+
     await this.fillFirstName(userData.firstName);
     await this.fillLastName(userData.lastName);
     await this.fillEmail(userData.email);
     await this.fillPassword(userData.password);
     await this.fillPasswordConfirmation(userData.password);
-    
+
     Logger.step(2, 'Submit sign up form');
     await this.clickCreateAccount();
   }

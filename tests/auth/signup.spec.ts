@@ -9,10 +9,7 @@ test.describe('User Registration', () => {
     await signInPage.navigateToSignUp();
   });
 
-  test('should successfully create a new user account', async ({ 
-    signUpPage, 
-    signInPage,
-  }) => {
+  test('should successfully create a new user account', async ({ signUpPage, signInPage }) => {
     Logger.testStart('User Sign Up Process');
 
     try {
@@ -24,7 +21,7 @@ test.describe('User Registration', () => {
       // ===== ACTUALLY GENERATE UNIQUE USER DATA =====
       Logger.step(2, 'Generate unique test user data');
       const userData = TestDataGenerator.generateUser(); // ✅ FIXED!
-      
+
       Logger.info('Generated test user', {
         email: userData.email,
         name: userData.fullName,
@@ -37,13 +34,12 @@ test.describe('User Registration', () => {
 
       // ===== VERIFY SUCCESSFUL REGISTRATION =====
       Logger.step(4, 'Verify successful registration');
-      
+
       // Should be redirected to Sign In page
       await expect(await signInPage.verifySignInTitle()).toBeVisible();
-      
+
       Logger.success('User successfully registered and redirected to Sign In page');
       Logger.testEnd('User Sign Up Process', true);
-      
     } catch (error) {
       Logger.error('Test failed', error);
       Logger.testEnd('User Sign Up Process', false);

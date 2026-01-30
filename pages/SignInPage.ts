@@ -31,7 +31,7 @@ export class SignInPage {
   //Toggles Remember Me checkbox on the Sign in page
   async toggleRememberMe(check: boolean = true): Promise<void> {
     const isChecked = await this.rememberMeCheckbox.isChecked();
-    
+
     if (check && !isChecked) {
       Logger.info('Checking Remember Me checkbox');
       await this.rememberMeCheckbox.check();
@@ -50,11 +50,11 @@ export class SignInPage {
     Logger.step(1, 'Fill in sign in credentials');
     await this.fillEmail(email);
     await this.fillPassword(password);
-    
+
     if (rememberMe) {
       await this.toggleRememberMe(true);
     }
-    
+
     Logger.step(2, 'Submit sign in form');
     await this.clickLogin();
   }
@@ -71,7 +71,7 @@ export class SignInPage {
   }
 
   async getSignInTitleText(): Promise<string> {
-    return await this.signInTitle.textContent() || '';
+    return (await this.signInTitle.textContent()) || '';
   }
 
   async isOnSignInPage(): Promise<boolean> {

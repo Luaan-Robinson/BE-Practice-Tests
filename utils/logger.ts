@@ -40,9 +40,7 @@ export class Logger {
 
   static testEnd(testName: string, passed: boolean): void {
     console.log(`\n${'='.repeat(80)}`);
-    console.log(
-      `[${this.getTimestamp()}] ${passed ? '✅ PASSED' : '❌ FAILED'}: ${testName}`
-    );
+    console.log(`[${this.getTimestamp()}] ${passed ? '✅ PASSED' : '❌ FAILED'}: ${testName}`);
     console.log(`${'='.repeat(80)}\n`);
   }
 }

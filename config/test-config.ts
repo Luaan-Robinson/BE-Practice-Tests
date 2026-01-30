@@ -11,7 +11,7 @@ export const testConfig = {
       password: process.env.TEST_USER_PASSWORD || 'dummy@123',
     },
   },
-  
+
   // Timeouts (in milliseconds)
   timeouts: {
     short: 5000,
@@ -19,13 +19,13 @@ export const testConfig = {
     long: 30000,
     extraLong: 60000,
   },
-  
+
   // Test data settings
   testData: {
     passwordLength: 12,
     passwordPattern: /[A-Za-z\d!@#$%^&*]/,
   },
-  
+
   // Retry settings
   retries: {
     flaky: 2,

@@ -8,11 +8,11 @@ export class OrganizationPage {
   private readonly nameInput: Locator;
   private readonly slugInput: Locator;
   private readonly logoInput: Locator;
-  
+
   // ===== BUTTONS (Create Organization) =====
   private readonly submitButton: Locator;
   private readonly resetButton: Locator;
-  
+
   // ===== NOTIFICATION/TOAST =====
   private readonly successToast: Locator;
   private readonly pageTitle: Locator;
@@ -29,11 +29,11 @@ export class OrganizationPage {
     this.nameInput = page.locator('input#name');
     this.slugInput = page.locator('input#slug');
     this.logoInput = page.locator('input#logo[type="file"]');
-    
+
     // Target buttons by text content within specific sections
     this.submitButton = page.locator('button[type="submit"]:has-text("Submit")').first();
     this.resetButton = page.locator('button[type="button"]:has-text("Reset")').first();
-    
+
     // Toast notification
     this.successToast = page.locator('[data-sonner-toast][data-type="success"]');
     this.pageTitle = page.locator('h1, [data-slot="title"]').first();
@@ -60,7 +60,7 @@ export class OrganizationPage {
   }
 
   // ===== ORGANIZATION LIST METHODS =====
-  
+
   async waitForTableToLoad(): Promise<void> {
     Logger.info('Waiting for organizations table to load');
     await this.organizationsTable.waitFor({ state: 'visible', timeout: 15000 });
@@ -68,22 +68,22 @@ export class OrganizationPage {
 
   async getOrganizationRowBySlug(slug: string): Promise<Locator | null> {
     Logger.info(`Looking for organization with slug: ${slug}`);
-    
+
     await this.waitForTableToLoad();
-    
+
     // Get all rows
     const rows = this.tableRows;
     const rowCount = await rows.count();
-    
+
     Logger.info(`Found ${rowCount} organization rows in table`);
-    
+
     // Search for the row containing the slug in the 4th column
     for (let i = 0; i < rowCount; i++) {
       const row = rows.nth(i);
-      
+
       // Look for the slug in the 4th column (index 3) - specific selector from your HTML
       const slugCell = row.locator('td:nth-child(4) div.text-left');
-      
+
       try {
         const cellText = await slugCell.textContent({ timeout: 2000 });
         if (cellText && cellText.trim() === slug) {
@@ -95,22 +95,22 @@ export class OrganizationPage {
         continue;
       }
     }
-    
+
     Logger.warning(`Organization with slug "${slug}" not found in table`);
     return null;
   }
 
   async findUseOrganizationButtonForSlug(slug: string): Promise<Locator | null> {
     Logger.info(`Looking for "Use Organization" button for slug: ${slug}`);
-    
+
     const row = await this.getOrganizationRowBySlug(slug);
     if (!row) {
       return null;
     }
-    
+
     // Find the "Use Organization" button in the first column - very specific selector
     const useButton = row.locator('td:first-child button:has-text("Use Organization")');
-    
+
     try {
       await useButton.waitFor({ state: 'visible', timeout: 5000 });
       Logger.info(`Found "Use Organization" button for slug: ${slug}`);
@@ -123,19 +123,19 @@ export class OrganizationPage {
 
   async clickUseOrganizationForSlug(slug: string): Promise<boolean> {
     Logger.info(`Clicking "Use Organization" for slug: ${slug}`);
-    
+
     const button = await this.findUseOrganizationButtonForSlug(slug);
     if (!button) {
       return false;
     }
-    
+
     // Check if button is already disabled (already active organization)
     const isDisabled = await button.isDisabled();
     if (isDisabled) {
       Logger.info(`Organization "${slug}" is already active`);
       return false;
     }
-    
+
     // Click the button
     await button.click();
     return true;
@@ -143,40 +143,40 @@ export class OrganizationPage {
 
   async isOrganizationActive(slug: string): Promise<boolean> {
     Logger.info(`Checking if organization "${slug}" is active`);
-    
+
     const button = await this.findUseOrganizationButtonForSlug(slug);
     if (!button) {
       return false;
     }
-    
+
     // Check if button is disabled and has star icon (active state)
     const isDisabled = await button.isDisabled();
     const hasStarIcon = await button.locator('svg.lucide-star').isVisible();
     const buttonText = await button.textContent();
     const isActiveText = buttonText?.includes('Active Organization') || false;
-    
+
     return isDisabled && hasStarIcon && isActiveText;
   }
 
   async verifyOrganizationInTable(slug: string): Promise<boolean> {
     Logger.info(`Verifying organization "${slug}" exists in table`);
-    
+
     const row = await this.getOrganizationRowBySlug(slug);
     return row !== null;
   }
 
   async waitForActiveOrganizationToast(): Promise<boolean> {
     Logger.info('Waiting for "Active organization changed" toast');
-    
+
     try {
       // Look for the specific success toast with title "Active organization changed"
       const toast = this.successToast.filter({ hasText: 'Active organization changed' });
       await toast.waitFor({ state: 'visible', timeout: 10000 });
-      
+
       // Also wait for the checkmark icon to appear
       const checkIcon = toast.locator('.lucide-circle-check');
       await checkIcon.waitFor({ state: 'visible', timeout: 5000 });
-      
+
       Logger.success('Active organization toast appeared');
       return true;
     } catch (error) {
@@ -189,7 +189,7 @@ export class OrganizationPage {
     try {
       const toast = this.successToast.filter({ hasText: 'Active organization changed' });
       const titleElement = toast.locator('[data-title]');
-      return await titleElement.textContent() || '';
+      return (await titleElement.textContent()) || '';
     } catch {
       return '';
     }
@@ -210,7 +210,7 @@ export class OrganizationPage {
   }
 
   // ===== CREATE FORM METHODS =====
-  
+
   // Public methods for test access
   public async isLogoInputVisible(): Promise<boolean> {
     return this.logoInput.isVisible();
@@ -236,10 +236,10 @@ export class OrganizationPage {
 
   async uploadLogo(imagePath: string): Promise<void> {
     Logger.info(`Uploading logo from: ${imagePath}`);
-    
+
     const absolutePath = path.resolve(process.cwd(), imagePath);
     Logger.info(`Absolute path: ${absolutePath}`);
-    
+
     await this.logoInput.setInputFiles(absolutePath);
     await this.page.waitForTimeout(1000);
   }
@@ -254,20 +254,26 @@ export class OrganizationPage {
     await this.resetButton.click();
   }
 
-  async fillOrganizationForm(orgData: OrganizationData, logoPath: string = 'test-logo.png'): Promise<void> {
+  async fillOrganizationForm(
+    orgData: OrganizationData,
+    logoPath: string = 'test-logo.png'
+  ): Promise<void> {
     Logger.step(1, 'Fill organization name');
     await this.fillName(orgData.name);
-    
+
     Logger.step(2, 'Fill organization slug');
     await this.fillSlug(orgData.slug);
-    
+
     Logger.step(3, 'Upload organization logo');
     await this.uploadLogo(logoPath);
   }
 
-  async createOrganization(orgData: OrganizationData, logoPath: string = 'test-logo.png'): Promise<void> {
+  async createOrganization(
+    orgData: OrganizationData,
+    logoPath: string = 'test-logo.png'
+  ): Promise<void> {
     Logger.info(`Creating organization: ${orgData.name}`);
-    
+
     await this.fillOrganizationForm(orgData, logoPath);
     await this.clickSubmit();
   }
@@ -303,7 +309,7 @@ export class OrganizationPage {
   async getSuccessToastText(): Promise<string> {
     try {
       const titleElement = this.successToast.locator('[data-title]');
-      return await titleElement.textContent() || '';
+      return (await titleElement.textContent()) || '';
     } catch {
       return '';
     }
@@ -343,7 +349,7 @@ export class OrganizationPage {
   async verifyFormReset(): Promise<boolean> {
     const nameValue = await this.getNameValue();
     const slugValue = await this.getSlugValue();
-    
+
     return nameValue === '' && slugValue === '';
   }
 
@@ -367,12 +373,12 @@ export class OrganizationPage {
   async areFieldsCleared(): Promise<boolean> {
     const nameValue = await this.getNameValue();
     const slugValue = await this.getSlugValue();
-    
+
     return nameValue === '' && slugValue === '';
   }
 
   // ===== NAVIGATION METHODS =====
-  
+
   async navigateToOrganizationList(): Promise<void> {
     Logger.info('Navigating to organization list page');
     await this.page.goto('/organization');

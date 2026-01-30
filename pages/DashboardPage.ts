@@ -6,24 +6,24 @@ export class DashboardPage {
   private readonly dashboardLink: Locator;
   private readonly organizationLink: Locator;
   private readonly usersLink: Locator;
-  
+
   // Organization page elements
   private readonly createButton: Locator;
-  private readonly createLink: Locator;  // ← ADD THIS
+  private readonly createLink: Locator; // ← ADD THIS
 
   constructor(public page: Page) {
     // Use getByRole to be more specific and avoid duplicates
     this.dashboardLink = page.getByRole('link', { name: 'Dashboard' }).first();
     this.organizationLink = page.getByRole('link', { name: 'Organization' }).first();
     this.usersLink = page.getByRole('link', { name: 'Users' }).first();
-    
+
     // ← FIX: Target the LINK that contains the button, not the button itself
     this.createLink = page.locator('a[href="/organization/create"]');
     this.createButton = page.locator('a[href="/organization/create"] button');
   }
 
   // ===== NAVIGATION METHODS =====
-  
+
   async navigateToDashboard(): Promise<void> {
     Logger.info('Navigating to Dashboard');
     await this.dashboardLink.click();
@@ -45,7 +45,7 @@ export class DashboardPage {
   }
 
   // ===== VERIFICATION METHODS =====
-  
+
   async isOnDashboard(): Promise<boolean> {
     try {
       await this.dashboardLink.waitFor({ state: 'visible', timeout: 5000 });
@@ -74,7 +74,7 @@ export class DashboardPage {
   }
 
   // ===== ELEMENT VISIBILITY CHECKS =====
-  
+
   async verifyDashboardLink(): Promise<Locator> {
     Logger.info('Verifying Dashboard link is visible');
     return this.dashboardLink;
@@ -91,7 +91,7 @@ export class DashboardPage {
   }
 
   // ===== ORGANIZATION PAGE ACTIONS ===== ← UPDATED SECTION
-  
+
   async clickCreateButton(): Promise<void> {
     Logger.info('Clicking Create button on Organization page');
     // Click the link, not the button (the button is inside the link)
@@ -107,7 +107,7 @@ export class DashboardPage {
       return false;
     }
   }
-  
+
   // ← ADD THIS: Alternative method to verify by button text
   async isCreateButtonVisibleByText(): Promise<boolean> {
     try {

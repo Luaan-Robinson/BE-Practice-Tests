@@ -19,15 +19,14 @@
     "test:webkit": "playwright test --project=webkit",
     "test:parallel": "playwright test --workers=4",
     "test:with-report": "playwright test && playwright show-report",
-    
     "report": "playwright show-report",
     "codegen": "playwright codegen",
     "install:browsers": "playwright install",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write \"**/*.{ts,json,md}\"",
-    "format:check": "prettier --check \"**/*.{ts,json,md}\""
+    "format:check": "prettier --check \"**/*.{ts,json,md}\"",
+    "format:fix": "prettier --write \"**/*.{ts,json,md}\""
   },
-  
   "devDependencies": {
     "@faker-js/faker": "^10.2.0",
     "@playwright/test": "^1.58.0",
@@ -38,7 +37,7 @@
     "dotenv": "^16.6.1",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^9.1.0",
-    "prettier": "^3.4.2",
+    "prettier": "^3.8.1",
     "typescript": "^5.9.3"
   },
   "engines": {

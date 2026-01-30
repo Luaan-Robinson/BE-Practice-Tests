@@ -16,18 +16,21 @@ A production-ready Playwright automation testing framework for the BE POR web ap
 ## 📋 Test Coverage
 
 ### Authentication
+
 - ✅ User sign in with valid credentials
 - ✅ User sign up (registration)
 - ✅ Sign in page validation
 - ✅ Invalid credential handling
 
 ### Dashboard Navigation
+
 - ✅ Sidebar navigation links
 - ✅ Organization page access
 - ✅ Users page access
 - ✅ Create button visibility
 
 ### Organization Management
+
 - ✅ Organization creation with form validation
 - ✅ Organization activation/deactivation
 - ✅ Organization list management
@@ -36,6 +39,7 @@ A production-ready Playwright automation testing framework for the BE POR web ap
 ## 🛠️ Quick Start
 
 1. **Clone and install:**
+
    ```bash
    git clone <repository-url>
    cd be-por-automation-tests
@@ -57,33 +61,38 @@ A production-ready Playwright automation testing framework for the BE POR web ap
     bash
 
     npm run report
+   ```
 
 📁 Project Structure
 text
 
 be-por-automation-tests/
-├── config/          # Environment and test configuration
-├── fixtures/        # Playwright custom fixtures
-├── pages/          # Page Object Model classes
-├── tests/          # Test specifications
-├── utils/          # Utilities (logger, data generator)
-└── *.config.ts     # Configuration files
+├── config/ # Environment and test configuration
+├── fixtures/ # Playwright custom fixtures
+├── pages/ # Page Object Model classes
+├── tests/ # Test specifications
+├── utils/ # Utilities (logger, data generator)
+└── \*.config.ts # Configuration files
 
 🧪 Running Tests
 bash
 
 # Run all tests
+
 npm test
 
 # Run specific test suites
+
 npm run test:auth
 npm run test:dashboard
 npm run test:organization
 
 # Run with UI (interactive)
+
 npm run test:ui
 
 # Run specific browser
+
 npm run test:chrome
 npm run test:firefox
 npm run test:webkit
@@ -97,12 +106,12 @@ import { Page, Locator } from '@playwright/test';
 import { Logger } from '../utils/logger';
 
 export class NewPage {
-  constructor(public page: Page) {}
-  
-  async navigateTo(): Promise<void> {
-    Logger.info('Navigating to new page');
-    await this.page.goto('/new-page');
-  }
+constructor(public page: Page) {}
+
+async navigateTo(): Promise<void> {
+Logger.info('Navigating to new page');
+await this.page.goto('/new-page');
+}
 }
 
 Writing Tests
@@ -113,12 +122,12 @@ import { test, expect } from '../fixtures/test-fixtures';
 import { Logger } from '../utils/logger';
 
 test.describe('New Feature', () => {
-  test('should test new feature', async ({ newPage }) => {
-    Logger.testStart('Testing New Feature');
-    await newPage.navigateTo();
-    // Test logic here
-    Logger.testEnd('Testing New Feature', true);
-  });
+test('should test new feature', async ({ newPage }) => {
+Logger.testStart('Testing New Feature');
+await newPage.navigateTo();
+// Test logic here
+Logger.testEnd('Testing New Feature', true);
+});
 });
 
 👥 Team Collaboration
