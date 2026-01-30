@@ -4,15 +4,15 @@ import { TestDataGenerator } from '../../utils/test-data-generator';
 
 /**
  * ORGANIZATION ACTIVATION TESTS
- * 
+ *
  * Status: TEMPORARILY SKIPPED
  * Reason: Performance issue with organization list page loading times
- * 
+ *
  * TODO: Re-enable these tests once the following issues are resolved:
  * 1. Organization table loading performance optimization
  * 2. Pagination implementation to handle large datasets
  * 3. Or if previous organizations are deleted
- * 
+ *
  * These tests are functional and will work once performance issues are addressed.
  * Last tested: [2026-01-29]
  */
