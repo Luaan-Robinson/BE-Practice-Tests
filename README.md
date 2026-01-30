@@ -1,6 +1,6 @@
 # BE POR Automation Test Framework
 
-A production-ready Playwright automation testing framework for the BE POR web application.
+A practice Playwright automation testing framework for the BE POR web application.
 
 ## 🚀 Features
 
