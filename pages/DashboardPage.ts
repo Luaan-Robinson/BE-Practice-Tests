@@ -66,7 +66,8 @@ export class DashboardPage {
 
     // Small buffer to ensure UI is fully rendered
     // This is more reliable than arbitrary timeout
-    await this.page.waitForLoadState(testConfig.waitStrategies.loadStates.network);
+    //await this.page.waitForLoadState(testConfig.waitStrategies.loadStates.network); //TODO remove if not needed
+    //await this.page.waitForLoadState('networkidle');
   }
 
   /**
