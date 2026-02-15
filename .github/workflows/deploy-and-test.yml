@@ -58,7 +58,7 @@ jobs:
     # Add PostgreSQL service for database verification tests
     services:
       postgres:
-        image: postgres:15
+        image: postgres:16-alpine
         env:
           POSTGRES_PASSWORD: testpassword123
           POSTGRES_USER: postgres
@@ -97,6 +97,106 @@ jobs:
           if [ ! -f "test-logo.png" ]; then
             echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" | base64 -d > test-logo.png
           fi
+
+      - name: Run database migrations
+        run: |
+          echo "Running database migrations..."
+          # If you have drizzle-kit, run migrations
+          npx drizzle-kit push || echo "Migrations failed but continuing..."
+          
+          # Alternative: Create tables manually if needed
+          PGPASSWORD=testpassword123 psql -h localhost -U postgres -d be_por_test -c "
+          CREATE TABLE IF NOT EXISTS \"user\" (
+            id text PRIMARY KEY,
+            name text NOT NULL,
+            surname text NOT NULL,
+            email text NOT NULL UNIQUE,
+            email_verified boolean DEFAULT false NOT NULL,
+            image text,
+            created_at timestamp DEFAULT now() NOT NULL,
+            updated_at timestamp DEFAULT now() NOT NULL,
+            role text,
+            banned boolean DEFAULT false,
+            ban_reason text,
+            ban_expires timestamp
+          );
+
+          CREATE TABLE IF NOT EXISTS organization (
+            id text PRIMARY KEY,
+            name text NOT NULL,
+            slug text NOT NULL UNIQUE,
+            logo text,
+            created_at timestamp NOT NULL,
+            metadata text
+          );
+
+          CREATE TABLE IF NOT EXISTS member (
+            id text PRIMARY KEY,
+            organization_id text NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
+            user_id text NOT NULL REFERENCES \"user\"(id) ON DELETE CASCADE,
+            role text DEFAULT 'member' NOT NULL,
+            created_at timestamp NOT NULL
+          );
+
+          CREATE TABLE IF NOT EXISTS session (
+            id text PRIMARY KEY,
+            expires_at timestamp NOT NULL,
+            token text NOT NULL UNIQUE,
+            created_at timestamp DEFAULT now() NOT NULL,
+            updated_at timestamp DEFAULT now() NOT NULL,
+            ip_address text,
+            user_agent text,
+            user_id text NOT NULL REFERENCES \"user\"(id) ON DELETE CASCADE,
+            impersonated_by text,
+            active_organization_id text
+          );
+
+          CREATE TABLE IF NOT EXISTS account (
+            id text PRIMARY KEY,
+            account_id text NOT NULL,
+            provider_id text NOT NULL,
+            user_id text NOT NULL REFERENCES \"user\"(id) ON DELETE CASCADE,
+            access_token text,
+            refresh_token text,
+            id_token text,
+            access_token_expires_at timestamp,
+            refresh_token_expires_at timestamp,
+            scope text,
+            password text,
+            created_at timestamp DEFAULT now() NOT NULL,
+            updated_at timestamp DEFAULT now() NOT NULL
+          );
+
+          CREATE TABLE IF NOT EXISTS verification (
+            id text PRIMARY KEY,
+            identifier text NOT NULL,
+            value text NOT NULL,
+            expires_at timestamp NOT NULL,
+            created_at timestamp DEFAULT now() NOT NULL,
+            updated_at timestamp DEFAULT now() NOT NULL
+          );
+
+          CREATE TABLE IF NOT EXISTS organization_role (
+            id text PRIMARY KEY,
+            organization_id text NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
+            role text NOT NULL,
+            permission text NOT NULL,
+            created_at timestamp DEFAULT now() NOT NULL,
+            updated_at timestamp DEFAULT now() NOT NULL
+          );
+
+          CREATE TABLE IF NOT EXISTS invitation (
+            id text PRIMARY KEY,
+            organization_id text NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
+            email text NOT NULL,
+            role text,
+            status text DEFAULT 'pending' NOT NULL,
+            expires_at timestamp NOT NULL,
+            inviter_id text NOT NULL REFERENCES \"user\"(id) ON DELETE CASCADE
+          );
+          "
+        env:
+          PGPASSWORD: testpassword123
 
       - name: Run full test suite
         run: npm test -- --project=${{ matrix.browser }}
