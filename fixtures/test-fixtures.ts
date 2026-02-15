@@ -50,11 +50,20 @@ class TestCleanup {
   async cleanup(): Promise<void> {
     Logger.info('Starting test cleanup...');
 
+    // Skip if no database URL (CI environment without DB)
+    if (!process.env.DATABASE_URL) {
+      Logger.info('Skipping database cleanup - no DATABASE_URL');
+      this.usersToCleanup = [];
+      this.organizationsToCleanup = [];
+      return;
+    }
+
     // Ensure database is connected before cleanup
     try {
       await DatabaseHelper.connect();
     } catch (error) {
-      Logger.debug('Database already connected or connection error', error);
+      Logger.warning('Could not connect to database for cleanup', error);
+      return;
     }
 
     // Clean up organizations first (may have foreign key dependencies)
@@ -103,8 +112,17 @@ export const test = base.extend<CustomFixtures>({
    */
   // eslint-disable-next-line no-empty-pattern
   database: async ({}, use) => {
-    // Ensure database is connected
-    await DatabaseHelper.connect();
+    // Only connect if DATABASE_URL exists
+    if (process.env.DATABASE_URL) {
+      try {
+        await DatabaseHelper.connect();
+      } catch (error) {
+        Logger.warning('Could not connect to database', error);
+      }
+    } else {
+      Logger.info('Skipping database connection - no DATABASE_URL');
+    }
+
     await use(DatabaseHelper);
     // Don't close connection here - let global teardown handle it
   },
@@ -117,15 +135,20 @@ export const test = base.extend<CustomFixtures>({
     const cleanup = new TestCleanup();
     await use(cleanup);
 
-    // Ensure database is connected before cleanup
-    try {
-      await DatabaseHelper.connect();
-    } catch (error) {
-      Logger.debug('Database already connected or connection error during cleanup', error);
-    }
+    // Only attempt cleanup if DATABASE_URL exists
+    if (process.env.DATABASE_URL) {
+      // Ensure database is connected before cleanup
+      try {
+        await DatabaseHelper.connect();
+      } catch (error) {
+        Logger.warning('Could not connect to database for cleanup', error);
+      }
 
-    // Cleanup runs after test completes
-    await cleanup.cleanup();
+      // Cleanup runs after test completes
+      await cleanup.cleanup();
+    } else {
+      Logger.info('Skipping test cleanup - no DATABASE_URL');
+    }
   },
 
   /**

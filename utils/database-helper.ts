@@ -1,25 +1,42 @@
 /**
  * Database Helper for Test Suite
  * Handles database operations for test setup, verification, and cleanup
- * Uses PostgreSQL client directly
+ * Uses PostgreSQL client directly with schema from auth-schema.ts
  */
 
 import { Pool } from 'pg';
 import { Logger } from './logger';
 
-// Database schema types (adjusted to match actual Drizzle schema)
+// Database schema types (matching auth-schema.ts)
 interface User {
   id: string;
-  email: string;
   name: string; // Full name field
   surname: string; // Last name field
+  email: string;
+  emailVerified: boolean;
+  image: string | null;
   createdAt: Date;
+  updatedAt: Date;
+  role: string | null;
+  banned: boolean | null;
+  banReason: string | null;
+  banExpires: Date | null;
 }
 
 interface Organization {
   id: string;
   name: string;
   slug: string;
+  logo: string | null;
+  createdAt: Date;
+  metadata: string | null;
+}
+
+interface Member {
+  id: string;
+  organizationId: string;
+  userId: string;
+  role: string;
   createdAt: Date;
 }
 
@@ -49,7 +66,22 @@ export class DatabaseHelper {
       connectionTimeoutMillis: 10000,
     });
 
-    Logger.success('Database connected successfully');
+    // Test the connection
+    try {
+      await this.pool.query('SELECT 1');
+      Logger.success('Database connected successfully');
+    } catch (error) {
+      Logger.error('Failed to connect to database', error);
+      this.pool = null;
+      throw error;
+    }
+  }
+
+  /**
+   * Check if database is connected
+   */
+  static isConnected(): boolean {
+    return this.pool !== null;
   }
 
   /**
@@ -89,7 +121,7 @@ export class DatabaseHelper {
   static async findUserByEmail(email: string): Promise<User | null> {
     try {
       const result = await this.query<User>(
-        'SELECT id, email, name, surname, created_at as "createdAt" FROM "user" WHERE email = $1 LIMIT 1',
+        'SELECT id, name, surname, email, email_verified as "emailVerified", image, created_at as "createdAt", updated_at as "updatedAt", role, banned, ban_reason as "banReason", ban_expires as "banExpires" FROM "user" WHERE email = $1 LIMIT 1',
         [email]
       );
       return result[0] || null;
@@ -100,12 +132,42 @@ export class DatabaseHelper {
   }
 
   /**
+   * Find user by ID
+   */
+  static async findUserById(id: string): Promise<User | null> {
+    try {
+      const result = await this.query<User>(
+        'SELECT id, name, surname, email, email_verified as "emailVerified", image, created_at as "createdAt", updated_at as "updatedAt", role, banned, ban_reason as "banReason", ban_expires as "banExpires" FROM "user" WHERE id = $1 LIMIT 1',
+        [id]
+      );
+      return result[0] || null;
+    } catch (error) {
+      Logger.error(`Failed to find user by id: ${id}`, error);
+      return null;
+    }
+  }
+
+  /**
    * Delete user by email
    * Returns true if user was deleted, false if not found
    */
   static async deleteUserByEmail(email: string): Promise<boolean> {
     try {
-      const result = await this.query('DELETE FROM "user" WHERE email = $1 RETURNING id', [email]);
+      // First find the user to get their ID
+      const user = await this.findUserByEmail(email);
+      if (!user) {
+        return false;
+      }
+
+      // Delete related records first due to foreign key constraints
+      await this.query('DELETE FROM session WHERE user_id = $1', [user.id]);
+      await this.query('DELETE FROM account WHERE user_id = $1', [user.id]);
+      await this.query('DELETE FROM member WHERE user_id = $1', [user.id]);
+      await this.query('DELETE FROM invitation WHERE inviter_id = $1', [user.id]);
+
+      // Finally delete the user
+      const result = await this.query('DELETE FROM "user" WHERE id = $1 RETURNING id', [user.id]);
+
       const deleted = result.length > 0;
       if (deleted) {
         Logger.info(`Deleted user: ${email}`);
@@ -122,6 +184,12 @@ export class DatabaseHelper {
    */
   static async deleteUserById(userId: string): Promise<boolean> {
     try {
+      // Delete related records first due to foreign key constraints
+      await this.query('DELETE FROM session WHERE user_id = $1', [userId]);
+      await this.query('DELETE FROM account WHERE user_id = $1', [userId]);
+      await this.query('DELETE FROM member WHERE user_id = $1', [userId]);
+      await this.query('DELETE FROM invitation WHERE inviter_id = $1', [userId]);
+
       const result = await this.query('DELETE FROM "user" WHERE id = $1 RETURNING id', [userId]);
       return result.length > 0;
     } catch (error) {
@@ -136,7 +204,7 @@ export class DatabaseHelper {
   static async findOrganizationBySlug(slug: string): Promise<Organization | null> {
     try {
       const result = await this.query<Organization>(
-        'SELECT id, name, slug, created_at as "createdAt" FROM organization WHERE slug = $1 LIMIT 1',
+        'SELECT id, name, slug, logo, created_at as "createdAt", metadata FROM organization WHERE slug = $1 LIMIT 1',
         [slug]
       );
       return result[0] || null;
@@ -147,13 +215,59 @@ export class DatabaseHelper {
   }
 
   /**
+   * Find organization by ID
+   */
+  static async findOrganizationById(id: string): Promise<Organization | null> {
+    try {
+      const result = await this.query<Organization>(
+        'SELECT id, name, slug, logo, created_at as "createdAt", metadata FROM organization WHERE id = $1 LIMIT 1',
+        [id]
+      );
+      return result[0] || null;
+    } catch (error) {
+      Logger.error(`Failed to find organization by id: ${id}`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Find members of an organization
+   */
+  static async findOrganizationMembers(organizationId: string): Promise<Member[]> {
+    try {
+      const result = await this.query<Member>(
+        'SELECT id, organization_id as "organizationId", user_id as "userId", role, created_at as "createdAt" FROM member WHERE organization_id = $1',
+        [organizationId]
+      );
+      return result;
+    } catch (error) {
+      Logger.error(`Failed to find members for organization: ${organizationId}`, error);
+      return [];
+    }
+  }
+
+  /**
    * Delete organization by slug
+   * Returns true if organization was deleted, false if not found
    */
   static async deleteOrganizationBySlug(slug: string): Promise<boolean> {
     try {
-      const result = await this.query('DELETE FROM organization WHERE slug = $1 RETURNING id', [
-        slug,
+      // First find the organization to get its ID
+      const org = await this.findOrganizationBySlug(slug);
+      if (!org) {
+        return false;
+      }
+
+      // Delete related records first due to foreign key constraints
+      await this.query('DELETE FROM member WHERE organization_id = $1', [org.id]);
+      await this.query('DELETE FROM invitation WHERE organization_id = $1', [org.id]);
+      await this.query('DELETE FROM organization_role WHERE organization_id = $1', [org.id]);
+
+      // Finally delete the organization
+      const result = await this.query('DELETE FROM organization WHERE id = $1 RETURNING id', [
+        org.id,
       ]);
+
       const deleted = result.length > 0;
       if (deleted) {
         Logger.info(`Deleted organization: ${slug}`);
@@ -170,6 +284,11 @@ export class DatabaseHelper {
    */
   static async deleteOrganizationById(orgId: string): Promise<boolean> {
     try {
+      // Delete related records first due to foreign key constraints
+      await this.query('DELETE FROM member WHERE organization_id = $1', [orgId]);
+      await this.query('DELETE FROM invitation WHERE organization_id = $1', [orgId]);
+      await this.query('DELETE FROM organization_role WHERE organization_id = $1', [orgId]);
+
       const result = await this.query('DELETE FROM organization WHERE id = $1 RETURNING id', [
         orgId,
       ]);
@@ -181,14 +300,49 @@ export class DatabaseHelper {
   }
 
   /**
+   * Get the active organization for a user's session
+   */
+  static async getUserActiveOrganization(userId: string): Promise<string | null> {
+    try {
+      const result = await this.query<{ active_organization_id: string }>(
+        'SELECT active_organization_id FROM session WHERE user_id = $1 AND active_organization_id IS NOT NULL LIMIT 1',
+        [userId]
+      );
+      return result[0]?.active_organization_id || null;
+    } catch (error) {
+      Logger.error(`Failed to get active organization for user: ${userId}`, error);
+      return null;
+    }
+  }
+
+  /**
    * Clean up test data by email pattern
    * Useful for cleaning up all test users after test runs
    */
   static async cleanupTestUsers(emailPattern: string = '%test%'): Promise<number> {
     try {
+      // First get all users matching the pattern
+      const users = await this.query<{ id: string }>('SELECT id FROM "user" WHERE email LIKE $1', [
+        emailPattern,
+      ]);
+
+      if (users.length === 0) {
+        return 0;
+      }
+
+      // Delete related records for each user
+      for (const user of users) {
+        await this.query('DELETE FROM session WHERE user_id = $1', [user.id]);
+        await this.query('DELETE FROM account WHERE user_id = $1', [user.id]);
+        await this.query('DELETE FROM member WHERE user_id = $1', [user.id]);
+        await this.query('DELETE FROM invitation WHERE inviter_id = $1', [user.id]);
+      }
+
+      // Delete the users
       const result = await this.query('DELETE FROM "user" WHERE email LIKE $1 RETURNING id', [
         emailPattern,
       ]);
+
       const count = result.length;
       if (count > 0) {
         Logger.info(`Cleaned up ${count} test users`);
@@ -205,9 +359,28 @@ export class DatabaseHelper {
    */
   static async cleanupTestOrganizations(slugPattern: string = '%test%'): Promise<number> {
     try {
+      // First get all organizations matching the pattern
+      const orgs = await this.query<{ id: string }>(
+        'SELECT id FROM organization WHERE slug LIKE $1',
+        [slugPattern]
+      );
+
+      if (orgs.length === 0) {
+        return 0;
+      }
+
+      // Delete related records for each organization
+      for (const org of orgs) {
+        await this.query('DELETE FROM member WHERE organization_id = $1', [org.id]);
+        await this.query('DELETE FROM invitation WHERE organization_id = $1', [org.id]);
+        await this.query('DELETE FROM organization_role WHERE organization_id = $1', [org.id]);
+      }
+
+      // Delete the organizations
       const result = await this.query('DELETE FROM organization WHERE slug LIKE $1 RETURNING id', [
         slugPattern,
       ]);
+
       const count = result.length;
       if (count > 0) {
         Logger.info(`Cleaned up ${count} test organizations`);
@@ -236,6 +409,33 @@ export class DatabaseHelper {
   }
 
   /**
+   * Verify user is a member of an organization
+   */
+  static async verifyUserInOrganization(
+    userEmail: string,
+    organizationSlug: string
+  ): Promise<boolean> {
+    try {
+      const user = await this.findUserByEmail(userEmail);
+      const org = await this.findOrganizationBySlug(organizationSlug);
+
+      if (!user || !org) {
+        return false;
+      }
+
+      const result = await this.query<{ id: string }>(
+        'SELECT id FROM member WHERE user_id = $1 AND organization_id = $2 LIMIT 1',
+        [user.id, org.id]
+      );
+
+      return result.length > 0;
+    } catch (error) {
+      Logger.error(`Failed to verify user in organization`, error);
+      return false;
+    }
+  }
+
+  /**
    * Get user count for testing
    */
   static async getUserCount(): Promise<number> {
@@ -259,6 +459,19 @@ export class DatabaseHelper {
       return parseInt(result[0]?.count || '0', 10);
     } catch (error) {
       Logger.error('Failed to get organization count', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Get member count for testing
+   */
+  static async getMemberCount(): Promise<number> {
+    try {
+      const result = await this.query<{ count: string }>('SELECT COUNT(*) as count FROM member');
+      return parseInt(result[0]?.count || '0', 10);
+    } catch (error) {
+      Logger.error('Failed to get member count', error);
       return 0;
     }
   }
