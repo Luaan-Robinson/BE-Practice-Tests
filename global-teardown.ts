@@ -16,7 +16,7 @@ async function globalTeardown() {
     // Check if DATABASE_URL is set and try to connect
     if (process.env.DATABASE_URL) {
       Logger.info('DATABASE_URL found, attempting database cleanup...');
-      
+
       try {
         await DatabaseHelper.connect();
         Logger.success('Database connected for teardown cleanup');
