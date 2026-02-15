@@ -48,15 +48,15 @@ class TestCleanup {
    * Clean up all registered resources
    */
   async cleanup(): Promise<void> {
-    Logger.info('Starting test cleanup...');
-
-    // Skip if no database URL (CI environment without DB)
-    if (!process.env.DATABASE_URL) {
-      Logger.info('Skipping database cleanup - no DATABASE_URL');
+    // Skip cleanup if no database URL or in CI without database
+    if (!process.env.DATABASE_URL || (process.env.CI && !process.env.DATABASE_URL)) {
+      Logger.info('Skipping database cleanup - no DATABASE_URL or CI without database');
       this.usersToCleanup = [];
       this.organizationsToCleanup = [];
       return;
     }
+
+    Logger.info('Starting test cleanup...');
 
     // Ensure database is connected before cleanup
     try {
@@ -112,6 +112,13 @@ export const test = base.extend<CustomFixtures>({
    */
   // eslint-disable-next-line no-empty-pattern
   database: async ({}, use) => {
+    // Skip database connection in CI without DATABASE_URL
+    if (process.env.CI && !process.env.DATABASE_URL) {
+      Logger.info('Skipping database connection - CI without DATABASE_URL');
+      await use(DatabaseHelper);
+      return;
+    }
+
     // Only connect if DATABASE_URL exists
     if (process.env.DATABASE_URL) {
       try {
@@ -134,6 +141,12 @@ export const test = base.extend<CustomFixtures>({
   testCleanup: async ({}, use) => {
     const cleanup = new TestCleanup();
     await use(cleanup);
+
+    // Skip cleanup in CI without DATABASE_URL
+    if (process.env.CI && !process.env.DATABASE_URL) {
+      Logger.info('Skipping test cleanup - CI without DATABASE_URL');
+      return;
+    }
 
     // Only attempt cleanup if DATABASE_URL exists
     if (process.env.DATABASE_URL) {

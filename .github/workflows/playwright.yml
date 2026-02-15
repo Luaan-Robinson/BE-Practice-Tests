@@ -12,22 +12,6 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     
-    # Add PostgreSQL service
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_PASSWORD: testpassword123
-          POSTGRES_USER: postgres
-          POSTGRES_DB: be_por_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-    
     strategy:
       fail-fast: false
       matrix:
@@ -53,14 +37,14 @@ jobs:
         run: |
           echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" | base64 -d > test-logo.png
 
-      - name: Run Playwright tests
+      - name: Run Playwright tests (UI only - no database)
         run: npm test -- --project=${{ matrix.browser }}
         env:
           CI: true
           BASE_URL: ${{ secrets.BASE_URL || 'http://102.130.120.68:3001' }}
           TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
           TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
-          DATABASE_URL: postgresql://postgres:testpassword123@localhost:5432/be_por_test
+          # DATABASE_URL intentionally not set - tests will skip DB verification
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
