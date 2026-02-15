@@ -80,6 +80,8 @@ test.describe('Organization Management', () => {
   /**
    * Test: Successfully create organization
    *
+   * NOTE: Skipped when no DATABASE_URL - requires database for organization persistence
+   *
    * SELF-ISOLATION:
    * - Creates unique test organization
    * - Verifies in database (if available)
@@ -92,6 +94,12 @@ test.describe('Organization Management', () => {
     database,
     testCleanup,
   }) => {
+    // Skip this test when no DATABASE_URL - organization creation requires database
+    test.skip(
+      !process.env.DATABASE_URL,
+      'Skipped without DATABASE_URL - requires database for organization persistence'
+    );
+
     Logger.testStart('Create Organization');
 
     // Check if we should skip database verification
@@ -240,6 +248,8 @@ test.describe('Organization Management', () => {
   /**
    * Test: Activate an inactive organization
    *
+   * NOTE: Skipped when no DATABASE_URL - requires database for organization persistence
+   *
    * This test specifically focuses on the activation flow
    */
   test('should activate an inactive organization', async ({
@@ -247,6 +257,12 @@ test.describe('Organization Management', () => {
     organizationPage,
     testCleanup,
   }) => {
+    // Skip this test when no DATABASE_URL - organization persistence requires database
+    test.skip(
+      !process.env.DATABASE_URL,
+      'Skipped without DATABASE_URL - requires database for organization persistence'
+    );
+
     Logger.testStart('Activate Organization');
 
     // ===== STEP 1: CREATE A NEW ORGANIZATION (WILL BE INACTIVE) =====
