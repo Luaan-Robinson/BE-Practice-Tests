@@ -25,8 +25,7 @@
     "lint": "eslint . --ext .ts",
     "format": "prettier --write \"**/*.{ts,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,json,md}\"",
-    "db:cleanup": "ts-node scripts/cleanup-test-data.ts",
-    "db:migrate": "ts-node scripts/migrate-database.ts"
+    "db:cleanup": "ts-node scripts/cleanup-test-data.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.7",
