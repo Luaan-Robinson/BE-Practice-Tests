@@ -38,7 +38,7 @@ Edit `.env` with your configuration:
 
 ```env
 BASE_URL=http://localhost:3000
-DATABASE_URL=postgresql://postgres:as98d7f98798dafdsafas@localhost:5432/be_por
+DATABASE_URL=postgresql://postgres:your-password-here@localhost:5432/your_database
 TEST_USER_EMAIL=your-test-user@example.com
 TEST_USER_PASSWORD=your-password
 ```
